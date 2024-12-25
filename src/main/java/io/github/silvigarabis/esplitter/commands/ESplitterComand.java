@@ -5,12 +5,9 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import io.github.silvigarabis.esplitter.ESplitterController;
 import io.github.silvigarabis.esplitter.ESplitterPlugin;
 import io.github.silvigarabis.esplitter.Messages;
 import io.github.silvigarabis.esplitter.Permissions;
-
-import org.bukkit.Bukkit;
 
 import java.util.logging.Logger;
 
