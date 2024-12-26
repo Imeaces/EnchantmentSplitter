@@ -77,43 +77,60 @@ public class ESplitterInvGui {
 
         // 状态
         slotItemUpdaters[slotItemStatusMode] = (gui, slot) -> {
-            switch (gui.operationMode) {
+            switch (gui.flagOperationMode) {
                 case SPLIT:
                     return GuiItemBuilder.createItemLocalized(
                             Material.WRITABLE_BOOK,
                             Messages.invGuiStatusModeSplit,
-                            gui.player);
+                            gui.linkPlayer);
                 case GRIND:
                     return GuiItemBuilder.createItemLocalized(
                             Material.GRINDSTONE,
                             Messages.invGuiStatusModeGrind,
-                            gui.player);
+                            gui.linkPlayer);
                 default:
                     return GuiItemBuilder.createItemLocalized(
                             Material.GRAY_DYE,
                             Messages.invGuiStatusModeUnknown,
-                            gui.player);
+                            gui.linkPlayer);
             }
 
         };
     }
 
-    private ItemStack[] slotItems = Arrays.stream(slotItemsStatic).map(item -> item.clone()).toArray(ItemStack[]::new);
-    private Player player;
-    public Player getPlayer() {
-        return player;
-    }
+    ///////////////////////////////
+    /// variables for these
+    ///////////////////////////////
 
-    ESplitterController controller;
-    private OperationMode operationMode = OperationMode.SPLIT;
-    List<ESplitterEvaluatedEnchantSet> cachedEvaluatedEnchantSetList = null;
-    int currentShowingPageIndex = 0;
-    List<List<ESplitterEvaluatedEnchantSet>> pagedElementList = new LinkedList<>();
+    /** list: 构建Inventory所需要的物品 */
+    ItemStack[] listSlotItems = Arrays.stream(slotItemsStatic).map(item -> item.clone()).toArray(ItemStack[]::new);
+    /** list: 所有附魔分析结果 */
+    List<ESplitterEvaluatedEnchantSet> listEnchantSet = null;
+    /** list: 分页后的附魔分析结果，每条结果都是一个视图 */
+    List<List<ESplitterEvaluatedEnchantSet>> listPages = null;
+
+    /** status: 当前操作模式 */
+    OperationMode flagOperationMode = OperationMode.SPLIT;
+    /** status: 当前页面索引 */
+    int flagPageIndex = 0;
+
+    /** info: 关联的玩家 */
+    final Player linkPlayer;
+    /** info: 关联的控制器 */
+    final ESplitterController linkController;
+    /** info: 关联的物品栏界面 */
+    InventoryView linkInventoryView = null;
+    /** info: 关联的物品栏 */
+    Inventory linkInventory = null;
+
+    //////////////////////////////////
+    // list update methods
+    //////////////////////////////////
 
     private void _callSlotCreator(int slot) {
         var creator = slotItemCreators[slot];
         if (creator != null) {
-            slotItems[slot] = creator.apply(player);
+            listSlotItems[slot] = creator.apply(linkPlayer);
         }
     }
 
@@ -134,10 +151,10 @@ public class ESplitterInvGui {
         if (updater == null) {
             return;
         }
-        var oldItem = slotItems[slot];
+        var oldItem = listSlotItems[slot];
         var newItem = updater.apply(this, slot);
         if (newItem != oldItem) {
-            slotItems[slot] = newItem;
+            listSlotItems[slot] = newItem;
         }
     }
 
@@ -153,48 +170,63 @@ public class ESplitterInvGui {
         }
     }
 
-    private InventoryView viewGui = null;
-    private Inventory viewInventory = null;
-
-    public ESplitterInvGui(ESplitterController controller) {
-        this.controller = controller;
-        this.player = controller.getPlayer();
-
-        generatePages();
-
-        _callSlotCreators();
-        _callSlotUpdaters();
-        _callSlotUpdaters();
-    }
-
-    private void generatePages() {
-        cachedEvaluatedEnchantSetList = this.controller.getEvaluatedEnchantGroupList();
+    private void _generatePages() {
+        listEnchantSet = this.linkController.getEvaluatedEnchantGroupList();
         List<List<ESplitterEvaluatedEnchantSet>> pagedList = new ArrayList<>();
-        int totalSize = cachedEvaluatedEnchantSetList.size();
+        int totalSize = listEnchantSet.size();
         for (int i = 0; i < totalSize; i += slotsElements.length) {
             // 直接将 subList 的结果添加到分页列表
             int end = Math.min(i + slotsElements.length, totalSize);
-            pagedList.add(cachedEvaluatedEnchantSetList.subList(i, end));
+            pagedList.add(listEnchantSet.subList(i, end));
         }
-        pagedElementList = pagedList;
+        listPages = pagedList;
     }
 
-    public void show() {
-        viewInventory = Bukkit.createInventory(player, 54, Messages.invGuiTitle.getPlayerText(player));
-        viewGui = player.openInventory(viewInventory);
 
-        ESplitterInvGuiListener.guiViews.put(viewGui, this);
+    public ESplitterInvGui(ESplitterController controller) {
+        this.linkController = controller;
+        this.linkPlayer = controller.getPlayer();
     }
 
-    public void onInvClick(InventoryClickEvent event) {
+    void viewChangePage(int pageIndex) {
+
+    }
+
+    public void viewShow() {
+        viewColse();
+
+        linkInventory = Bukkit.createInventory(linkPlayer, 54, Messages.invGuiTitle.getPlayerText(linkPlayer));
+        linkInventoryView = linkPlayer.openInventory(linkInventory);
+
+        ESplitterInvGuiListener.guiViews.put(linkInventoryView, this);
+    }
+
+    public void viewColse() {
+        if (linkInventoryView != null) {
+            linkInventoryView.close();
+            linkInventoryView = null;
+        }
+        if (linkInventory != null) {
+            linkInventory.clear();
+            linkInventory = null;
+        }
+    }
+
+    public void viewInvOnClick(InventoryClickEvent event) {
         throw new NotImplementedException();
     }
 
-    public void onInvClose(InventoryCloseEvent event) {
+    public void viewInvOnClose(InventoryCloseEvent event) {
         throw new NotImplementedException();
     }
 
-    public void onInvDrag(InventoryDragEvent event) {
+    public void viewInvOnDrag(InventoryDragEvent event) {
         throw new NotImplementedException();
     }
+
+    // getters
+    public Player getPlayer() {
+        return linkPlayer;
+    }
+
 }

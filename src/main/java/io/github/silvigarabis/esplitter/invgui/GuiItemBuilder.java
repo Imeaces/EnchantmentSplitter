@@ -16,10 +16,10 @@ import io.github.silvigarabis.esplitter.data.ESplitterConsumpsion;
 public class GuiItemBuilder {
 
     static final ItemStack updateSlotElement(ESplitterInvGui gui, int pagedElemenetIndex) {
-        int elementIndex = gui.currentShowingPageIndex * ESplitterInvGui.slotsElements.length + pagedElemenetIndex;
-        var enchantSet = gui.cachedEvaluatedEnchantSetList.get(elementIndex);
+        int elementIndex = gui.flagPageIndex * ESplitterInvGui.slotsElements.length + pagedElemenetIndex;
+        var enchantSet = gui.listEnchantSet.get(elementIndex);
     
-        var allEnchants = gui.controller.getCurrentEnchants();
+        var allEnchants = gui.linkController.getCurrentEnchants();
     
         var itemElement = new ItemStack(ENCHANTED_BOOK);
         var itemElementMeta = (EnchantmentStorageMeta) itemElement.getItemMeta();
